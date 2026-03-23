@@ -61,7 +61,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 @media(min-width:720px){.kpi{grid-template-columns:repeat(4,1fr)}}
 .metric{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
 .metric .v{font-size:24px;font-weight:900}
-.review{border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.review{border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}.review.wrong{border:2px solid var(--bad);background:var(--bad-soft)}.badge-wrong{display:inline-block;padding:4px 8px;border-radius:999px;background:var(--bad);color:#fff;font-size:12px;font-weight:800;margin-left:8px}.filterbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .hidden{display:none!important}
 .sticky-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:rgba(238,242,247,.94);backdrop-filter:blur(14px);border-top:1px solid rgba(148,163,184,.25)}
 .sticky-nav .wrap{max-width:920px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
@@ -158,7 +158,8 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:12px 0}
       - 오답노트 / 모름표시 복습 강화<br>
       - 과목별 약점 + 태그 약점 분석<br>
       - CBT 답안표/하단 내비게이션 강화<br>
-      - 문항에 “변형” 표시 제거
+      - 문항에 “변형” 표시 제거<br>
+      - 제출 후 해설에서 오답 강조 및 오답만 보기
     </div>
   </section>
 
@@ -436,9 +437,13 @@ function finishExam(auto=false){
 
     <div class="card">
       <h2>문항별 해설</h2>
+      <div class="filterbar">
+        <button type="button" class="secondary" onclick="toggleReviewFilter('all')">전체 보기</button>
+        <button type="button" class="warn" onclick="toggleReviewFilter('wrong')">오답만 보기</button>
+      </div>
       ${review.map((r,n)=>`
-        <div class="review">
-          <div style="font-weight:900;line-height:1.45">${n+1}. [${r.q.subject}] ${r.q.question}</div>
+        <div class="review ${r.ok ? "correct" : "wrong"}" data-review-kind="${r.ok ? "correct" : "wrong"}">
+          <div style="font-weight:900;line-height:1.45">${n+1}. [${r.q.subject}] ${r.q.question}${r.ok ? "" : '<span class="badge-wrong">오답</span>'}</div>
           <div class="small" style="margin-top:8px">내 답: ${r.user===undefined ? "미응답" : (r.user+1)+". "+r.q.choices[r.user]}</div>
           <div class="small" style="margin-top:4px">정답: ${r.q.answer+1}. ${r.q.choices[r.q.answer]}</div>
           <div style="margin-top:8px">${r.q.explanation}</div>
@@ -471,6 +476,15 @@ qs("prevBtn").onclick = ()=>{ if(idx>0){ const y=rememberScroll(); idx--; render
 qs("nextBtn").onclick = ()=>{ if(idx<exam.length-1){ const y=rememberScroll(); idx++; renderQuestion(); restoreScroll(y); } };
 qs("flagBtn").onclick = ()=>{ const y=rememberScroll(); const q=exam[idx]; const gid=groupKey(q); if(flags.has(gid)) flags.delete(gid); else flags.add(gid); renderQuestion(); restoreScroll(y); };
 qs("submitBtn").onclick = ()=>{ if(confirm("지금 제출할까?")) finishExam(false); };
+
+
+function toggleReviewFilter(kind){
+  const cards = document.querySelectorAll('[data-review-kind]');
+  cards.forEach(card => {
+    if(kind === 'all') card.style.display = '';
+    else card.style.display = card.dataset.reviewKind === kind ? '' : 'none';
+  });
+}
 
 updateRunModeUI();
 renderStats();
