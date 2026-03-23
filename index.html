@@ -7,8 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="전기기능사 CBT" />
-<link rel="manifest" href="./manifest.json" />
-<link rel="apple-touch-icon" href="./icon.svg" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <title>전기기능사 모의시험</title>
 <style>
 :root{
@@ -82,8 +83,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 </head>
 <body>
 <header>
-  <h1>전기기능사 모의시험</h1>
-  <p>GitHub Pages용. 문항 랜덤 + 보기 랜덤 + 가변 문항 버전 선택까지 넣은 v3.</p>
+  <h1>전기기능사 모의시험 <span style='font-size:12px;font-weight:700;opacity:.8'>v5</span></h1>
+  <p>GitHub Pages용. v5는 서비스워커 캐시를 제거해서 업데이트 반영이 바로 보이게 만든 버전이다.</p>
 </header>
 
 <main>
@@ -134,6 +135,16 @@ button:disabled{opacity:.45;cursor:not-allowed}
       <div class="metric"><div class="small">평균 점수</div><div class="v" id="stAvg">0</div></div>
       <div class="metric"><div class="small">최고 점수</div><div class="v" id="stBest">0</div></div>
       <div class="metric"><div class="small">합격 횟수</div><div class="v" id="stPass">0</div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>v5 변경사항</h2>
+    <div class="small">
+      - 서비스워커 제거<br>
+      - 캐시 꼬임 최소화<br>
+      - 화면 상단에 v5 표시<br>
+      - 다음/이전/답 선택 시 스크롤 복원 유지
     </div>
   </section>
 
@@ -343,10 +354,6 @@ qs("flagBtn").onclick=()=>{ const y=rememberScroll(); const q=exam[idx]; if(flag
 qs("submitBtn").onclick=()=>{ if(confirm("지금 제출할까?")) finishExam(false); };
 
 renderStats();
-
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-  navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
-}
 </script>
 </body>
 </html>
