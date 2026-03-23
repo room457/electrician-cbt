@@ -120,10 +120,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
       <span class="chip">총 120문항</span>
     </div>
     <div class="row" style="margin-top:14px">
-      <button id="startBtn">시험 시작</button>
-      <button class="secondary" id="sampleBtn">20문항 빠른 테스트</button>
-      <button class="ghost" id="resetWrongBtn">오답노트 초기화</button>
-      <button class="ghost" id="resetStatsBtn">통계 초기화</button>
+      <button type="button" id="startBtn">시험 시작</button>
+      <button type="button" class="secondary" id="sampleBtn">20문항 빠른 테스트</button>
+      <button type="button" class="ghost" id="resetWrongBtn">오답노트 초기화</button>
+      <button type="button" class="ghost" id="resetStatsBtn">통계 초기화</button>
     </div>
   </section>
 
@@ -138,12 +138,13 @@ button:disabled{opacity:.45;cursor:not-allowed}
   </section>
 
   <section class="card">
-    <h2>v3 변경사항</h2>
+    <h2>v4 변경사항</h2>
     <div class="small">
       - 문항 순서 랜덤<br>
       - 보기 순서 랜덤<br>
       - 같은 개념 문항은 여러 버전 중 1개 랜덤 선택<br>
-      - 실전 기본값 60문항 / 60분 유지
+      - 실전 기본값 60문항 / 60분 유지<br>
+      - 다음/이전/답 선택 시 현재 스크롤 위치 강제 복원
     </div>
   </section>
 
@@ -187,10 +188,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 <div class="sticky-nav hidden" id="navBar">
   <div class="wrap">
-    <button class="secondary" id="prevBtn">이전</button>
-    <button class="ghost" id="flagBtn">모름 표시</button>
-    <button class="secondary" id="nextBtn">다음</button>
-    <button class="warn" id="submitBtn">제출</button>
+    <button type="button" class="secondary" id="prevBtn">이전</button>
+    <button type="button" class="ghost" id="flagBtn">모름 표시</button>
+    <button type="button" class="secondary" id="nextBtn">다음</button>
+    <button type="button" class="warn" id="submitBtn">제출</button>
   </div>
 </div>
 
@@ -203,6 +204,16 @@ let exam = [], answers = {}, flags = new Set(), idx = 0, timer = null, remain = 
 function qs(id){ return document.getElementById(id); }
 function shuffle(a){ const arr=[...a]; for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
 function fmt(sec){ const m=String(Math.floor(sec/60)).padStart(2,"0"); const s=String(sec%60).padStart(2,"0"); return `${m}:${s}`; }
+function rememberScroll(){
+  return window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+}
+function restoreScroll(y){
+  requestAnimationFrame(() => {
+    window.scrollTo(0, y);
+    setTimeout(() => window.scrollTo(0, y), 0);
+  });
+}
+
 function getStats(){ return JSON.parse(localStorage.getItem(STATS_KEY) || '{"total":0,"sum":0,"best":0,"pass":0}'); }
 function renderStats(){ const st=getStats(); qs("stTotal").textContent=st.total; qs("stAvg").textContent=st.total?Math.round(st.sum/st.total):0; qs("stBest").textContent=st.best; qs("stPass").textContent=st.pass; }
 function saveStats(score){ const st=getStats(); st.total+=1; st.sum+=score; st.best=Math.max(st.best, score); if(score>=60) st.pass+=1; localStorage.setItem(STATS_KEY, JSON.stringify(st)); renderStats(); }
@@ -272,12 +283,12 @@ function renderQuestion(){
     const b=document.createElement("button");
     b.className="choice"+(answers[q.id]===choiceIndex?" selected":"");
     b.innerHTML=`<small>${displayIndex+1}번</small>${c}`;
-    b.onclick=()=>{ answers[q.id]=choiceIndex; renderQuestion(); };
+    b.onclick=()=>{ const y=rememberScroll(); answers[q.id]=choiceIndex; renderQuestion(); restoreScroll(y); };
     wrap.appendChild(b);
   });
 
   const sheet=qs("answerSheet"); sheet.innerHTML="";
-  exam.forEach((item,i)=>{ const d=document.createElement("div"); let cls="num"; if(i===idx) cls+=" current"; if(flags.has(item.id)) cls+=" flag"; else if(answers[item.id]!==undefined) cls+=" done"; d.className=cls; d.textContent=i+1; d.onclick=()=>{ idx=i; renderQuestion();  }; sheet.appendChild(d); });
+  exam.forEach((item,i)=>{ const d=document.createElement("div"); let cls="num"; if(i===idx) cls+=" current"; if(flags.has(item.id)) cls+=" flag"; else if(answers[item.id]!==undefined) cls+=" done"; d.className=cls; d.textContent=i+1; d.onclick=()=>{ const y=rememberScroll(); idx=i; renderQuestion(); restoreScroll(y); }; sheet.appendChild(d); });
 }
 
 function finishExam(auto=false){
@@ -326,9 +337,9 @@ qs("startBtn").onclick=()=>startExam(false);
 qs("sampleBtn").onclick=()=>startExam(true);
 qs("resetWrongBtn").onclick=()=>{ localStorage.removeItem(WRONG_KEY); alert("오답노트를 초기화했다."); };
 qs("resetStatsBtn").onclick=()=>{ localStorage.removeItem(STATS_KEY); renderStats(); alert("누적 통계를 초기화했다."); };
-qs("prevBtn").onclick=()=>{ if(idx>0){ idx--; renderQuestion();  } };
-qs("nextBtn").onclick=()=>{ if(idx<exam.length-1){ idx++; renderQuestion();  } };
-qs("flagBtn").onclick=()=>{ const q=exam[idx]; if(flags.has(q.id)) flags.delete(q.id); else flags.add(q.id); renderQuestion(); };
+qs("prevBtn").onclick=()=>{ if(idx>0){ const y=rememberScroll(); idx--; renderQuestion(); restoreScroll(y); } };
+qs("nextBtn").onclick=()=>{ if(idx<exam.length-1){ const y=rememberScroll(); idx++; renderQuestion(); restoreScroll(y); } };
+qs("flagBtn").onclick=()=>{ const y=rememberScroll(); const q=exam[idx]; if(flags.has(q.id)) flags.delete(q.id); else flags.add(q.id); renderQuestion(); restoreScroll(y); };
 qs("submitBtn").onclick=()=>{ if(confirm("지금 제출할까?")) finishExam(false); };
 
 renderStats();
